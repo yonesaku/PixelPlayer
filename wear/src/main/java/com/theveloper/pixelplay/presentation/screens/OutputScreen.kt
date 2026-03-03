@@ -13,6 +13,7 @@ import androidx.compose.material.icons.rounded.Bluetooth
 import androidx.compose.material.icons.rounded.Watch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -43,6 +44,7 @@ import com.theveloper.pixelplay.presentation.theme.surfaceContainerHighestColor
 import com.theveloper.pixelplay.presentation.viewmodel.WearPlayerViewModel
 import com.theveloper.pixelplay.shared.WearPlayerState
 import com.theveloper.pixelplay.shared.WearVolumeState
+import kotlinx.coroutines.delay
 
 @Composable
 fun OutputScreen(
@@ -65,6 +67,12 @@ fun OutputScreen(
         viewModel.setWatchRouteDiscoveryEnabled(true)
         onDispose {
             viewModel.setWatchRouteDiscoveryEnabled(false)
+        }
+    }
+    LaunchedEffect(viewModel) {
+        while (true) {
+            viewModel.refreshWatchAudioState()
+            delay(700L)
         }
     }
 
@@ -150,7 +158,7 @@ fun OutputScreen(
                                 canSwitchToWatch = canSwitchToWatch,
                             ),
                             icon = outputRouteIcon(route.routeType),
-                            selected = outputTarget == WearOutputTarget.WATCH && route.isSelected,
+                            selected = outputTarget == WearOutputTarget.WATCH && route.isActive,
                             enabled = canSwitchToWatch,
                             onClick = { viewModel.selectWatchOutput(route.id) },
                         )
@@ -196,18 +204,18 @@ private fun watchOutputSubtitle(
     canSwitchToWatch: Boolean,
 ): String {
     return when {
-        route.isSelected && outputTarget == WearOutputTarget.WATCH && playerState.isPlaying ->
+        route.isActive && outputTarget == WearOutputTarget.WATCH && playerState.isPlaying ->
             "Playing on watch"
-        route.isSelected && outputTarget == WearOutputTarget.WATCH ->
+        route.isActive && outputTarget == WearOutputTarget.WATCH ->
             "Selected on watch"
         route.isConnecting ->
             "Connecting"
+        route.isConnected && outputTarget == WearOutputTarget.WATCH ->
+            "Connected to watch"
         !canSwitchToWatch && playerState.songId.isBlank() ->
             "Play a song first"
         !canSwitchToWatch ->
             "Save this song on watch first"
-        route.isConnected && outputTarget == WearOutputTarget.WATCH ->
-            "Switch audio to ${route.name}"
         route.isConnected ->
             "Switch current song to ${route.name}"
         else ->

@@ -2,8 +2,10 @@ package com.theveloper.pixelplay.data
 
 import android.app.Application
 import android.content.Context
+import android.media.AudioAttributes
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
+import android.os.Build
 import androidx.mediarouter.media.MediaControlIntent
 import androidx.mediarouter.media.MediaRouteSelector
 import androidx.mediarouter.media.MediaRouter
@@ -31,6 +33,12 @@ class WearVolumeRepository @Inject constructor(
         application.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     }
     private val mediaRouter by lazy { MediaRouter.getInstance(application) }
+    private val mediaAudioAttributes by lazy {
+        AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_MEDIA)
+            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+            .build()
+    }
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val watchRouteSelector = MediaRouteSelector.Builder()
         .addControlCategory(MediaControlIntent.CATEGORY_LIVE_AUDIO)
@@ -143,11 +151,22 @@ class WearVolumeRepository @Inject constructor(
 
     private fun syncWatchAudioState() {
         scope.launch {
-            val routes = mediaRouter.routes
+            val mediaRoutes = mediaRouter.routes
                 .filter { route -> route.isWatchAudioRoute() && route.isEnabled }
-                .map { route -> route.toWearAudioOutputRoute(audioManager) }
+            val activeRouteId = mediaRoutes.resolveActiveRouteId(
+                audioManager = audioManager,
+                mediaAudioAttributes = mediaAudioAttributes,
+            )
+            val routes = mediaRoutes
+                .map { route ->
+                    route.toWearAudioOutputRoute(
+                        audioManager = audioManager,
+                        isActive = route.id == activeRouteId,
+                    )
+                }
                 .sortedWith(
-                    compareByDescending<WearAudioOutputRoute> { it.isSelected }
+                    compareByDescending<WearAudioOutputRoute> { it.isActive }
+                        .thenByDescending { it.isSelected }
                         .thenByDescending { it.isBluetooth }
                         .thenByDescending { it.isConnected }
                         .thenBy { it.name.lowercase() }
@@ -155,10 +174,11 @@ class WearVolumeRepository @Inject constructor(
 
             _watchAudioRoutes.value = routes
 
-            val selectedRoute = routes.firstOrNull { it.isSelected }
+            val activeRoute = routes.firstOrNull { it.isActive }
+                ?: routes.firstOrNull { it.isSelected }
                 ?: mediaRouter.selectedRoute
                     .takeIf { route -> route.isWatchAudioRoute() }
-                    ?.toWearAudioOutputRoute(audioManager)
+                    ?.toWearAudioOutputRoute(audioManager = audioManager, isActive = false)
 
             val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(0)
             val level = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC).coerceIn(0, max)
@@ -166,8 +186,8 @@ class WearVolumeRepository @Inject constructor(
             _watchVolumeState.value = WearVolumeState(
                 level = level,
                 max = max,
-                routeType = selectedRoute?.routeType ?: WearVolumeState.ROUTE_TYPE_WATCH,
-                routeName = selectedRoute?.name.orEmpty().ifBlank { DEFAULT_WATCH_ROUTE_NAME },
+                routeType = activeRoute?.routeType ?: WearVolumeState.ROUTE_TYPE_WATCH,
+                routeName = activeRoute?.name.orEmpty().ifBlank { DEFAULT_WATCH_ROUTE_NAME },
             )
         }
     }
@@ -205,7 +225,10 @@ private fun MediaRouter.RouteInfo.isWatchAudioRoute(): Boolean {
     return isSystemRoute && (isBluetooth || isDeviceSpeaker)
 }
 
-private fun MediaRouter.RouteInfo.toWearAudioOutputRoute(audioManager: AudioManager): WearAudioOutputRoute {
+private fun MediaRouter.RouteInfo.toWearAudioOutputRoute(
+    audioManager: AudioManager,
+    isActive: Boolean,
+): WearAudioOutputRoute {
     val routeType = when {
         isBluetooth -> resolveBluetoothRouteType(
             audioDevice = audioManager.findMatchingBluetoothOutput(name.toString()),
@@ -229,7 +252,64 @@ private fun MediaRouter.RouteInfo.toWearAudioOutputRoute(audioManager: AudioMana
         routeType = routeType,
         connectionState = resolvedConnectionState,
         isSelected = isSelected(),
+        isActive = isActive,
     )
+}
+
+private fun List<MediaRouter.RouteInfo>.resolveActiveRouteId(
+    audioManager: AudioManager,
+    mediaAudioAttributes: AudioAttributes,
+): String? {
+    val activeOutput = audioManager.findActiveMediaOutput(mediaAudioAttributes)
+
+    return when {
+        activeOutput == null -> firstOrNull { it.isSelected() }?.id
+        activeOutput.isBuiltInSpeakerOutput() -> firstOrNull { it.isDeviceSpeaker }?.id
+        activeOutput.isBluetoothOutput() -> {
+            val activeName = activeOutput.productName?.toString().orEmpty()
+            findMatchingBluetoothRoute(activeName)?.id
+                ?: firstOrNull { it.isBluetooth && it.isSelected() }?.id
+                ?: firstOrNull { it.isBluetooth }?.id
+        }
+        else -> firstOrNull { it.isSelected() }?.id
+    }
+}
+
+private fun List<MediaRouter.RouteInfo>.findMatchingBluetoothRoute(
+    deviceName: String,
+): MediaRouter.RouteInfo? {
+    return filter { it.isBluetooth }
+        .firstOrNull { route -> namesLikelyReferToSameDevice(route.name.toString(), deviceName) }
+        ?: firstOrNull { route ->
+            val routeName = route.name.toString()
+            routeName.isNotBlank() && (
+                routeName.contains(deviceName, ignoreCase = true) ||
+                    deviceName.contains(routeName, ignoreCase = true)
+                )
+        }
+        ?: firstOrNull()
+}
+
+@Suppress("DEPRECATION")
+private fun AudioManager.findActiveMediaOutput(
+    mediaAudioAttributes: AudioAttributes,
+): AudioDeviceInfo? {
+    val routedOutputs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        runCatching {
+            getAudioDevicesForAttributes(mediaAudioAttributes)
+        }.getOrDefault(emptyList())
+    } else {
+        emptyList()
+    }
+
+    routedOutputs.firstOrNull { it.isRelevantWatchOutput() }?.let { return it }
+
+    return when {
+        isBluetoothA2dpOn || isBluetoothScoOn ->
+            getDevices(AudioManager.GET_DEVICES_OUTPUTS).firstOrNull { it.isBluetoothOutput() }
+        else ->
+            getDevices(AudioManager.GET_DEVICES_OUTPUTS).firstOrNull { it.isBuiltInSpeakerOutput() }
+    }
 }
 
 private fun AudioManager.findMatchingBluetoothOutput(routeName: String): AudioDeviceInfo? {
@@ -239,7 +319,10 @@ private fun AudioManager.findMatchingBluetoothOutput(routeName: String): AudioDe
 
     val normalizedRouteName = routeName.trim()
     return bluetoothOutputs.firstOrNull { device ->
-        device.productName?.toString()?.trim()?.equals(normalizedRouteName, ignoreCase = true) == true
+        namesLikelyReferToSameDevice(
+            device.productName?.toString().orEmpty(),
+            normalizedRouteName,
+        )
     } ?: bluetoothOutputs.firstOrNull { device ->
         val productName = device.productName?.toString()?.trim().orEmpty()
         productName.isNotBlank() &&
@@ -248,12 +331,28 @@ private fun AudioManager.findMatchingBluetoothOutput(routeName: String): AudioDe
     } ?: bluetoothOutputs.first()
 }
 
+private fun AudioDeviceInfo.isRelevantWatchOutput(): Boolean {
+    return isBluetoothOutput() || isBuiltInSpeakerOutput()
+}
+
 private fun AudioDeviceInfo.isBluetoothOutput(): Boolean {
     return type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP ||
         type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO ||
         type == AudioDeviceInfo.TYPE_BLE_HEADSET ||
         type == AudioDeviceInfo.TYPE_BLE_SPEAKER ||
         type == AudioDeviceInfo.TYPE_BLE_BROADCAST
+}
+
+private fun AudioDeviceInfo.isBuiltInSpeakerOutput(): Boolean {
+    return type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER ||
+        type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER_SAFE
+}
+
+private fun namesLikelyReferToSameDevice(first: String, second: String): Boolean {
+    val normalizedFirst = first.trim()
+    val normalizedSecond = second.trim()
+    if (normalizedFirst.isBlank() || normalizedSecond.isBlank()) return false
+    return normalizedFirst.equals(normalizedSecond, ignoreCase = true)
 }
 
 private fun resolveBluetoothRouteType(

@@ -179,7 +179,9 @@ class WearPlayerViewModel @Inject constructor(
         }
         viewModelScope.launch {
             while (true) {
-                if (!isWatchOutputSelected.value && isPhoneConnected.value) {
+                if (isWatchOutputSelected.value) {
+                    volumeRepository.refreshWatchVolumeState()
+                } else if (isPhoneConnected.value) {
                     playbackController.requestPhoneVolumeState()
                 }
                 delay(PHONE_ROUTE_REFRESH_INTERVAL_MS)
@@ -257,6 +259,10 @@ class WearPlayerViewModel @Inject constructor(
 
     fun setWatchRouteDiscoveryEnabled(enabled: Boolean) {
         volumeRepository.setWatchRouteDiscoveryEnabled(enabled)
+    }
+
+    fun refreshWatchAudioState() {
+        volumeRepository.refreshWatchVolumeState()
     }
 
     fun togglePlayPause() {

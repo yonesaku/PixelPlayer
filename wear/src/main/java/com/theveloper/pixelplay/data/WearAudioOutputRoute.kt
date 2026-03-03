@@ -9,6 +9,7 @@ data class WearAudioOutputRoute(
     val routeType: String,
     val connectionState: Int,
     val isSelected: Boolean,
+    val isActive: Boolean,
 ) {
     val isConnecting: Boolean
         get() = connectionState == MediaRouter.RouteInfo.CONNECTION_STATE_CONNECTING

@@ -1136,26 +1136,42 @@ fun LyricLineRow(
             .then(if (blurRadius > 0.dp) Modifier.blur(blurRadius) else Modifier)
     } else baseModifier
 
+    val translationText = line.translation
+    val translationStyle = remember(style) {
+        style.copy(fontSize = style.fontSize * 0.75f)
+    }
+    val translationColor = lineColor.copy(alpha = lineColor.alpha * 0.7f)
+
     if (sanitizedWords.isNullOrEmpty()) {
-        Box(
+        Column(
             modifier = animatedModifier
                 .clip(RoundedCornerShape(12.dp))
                 .clickable { onClick() }
                 .padding(vertical = verticalPadding, horizontal = 2.dp)
         ) {
-            // Invisible bold text to reserve layout space and prevent reflow
-            Text(
-                text = sanitizedLine,
-                style = style,
-                color = Color.Transparent,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                text = sanitizedLine,
-                style = style,
-                color = lineColor,
-                fontWeight = if (isCurrentLine) FontWeight.Bold else FontWeight.Normal,
-            )
+            Box {
+                // Invisible bold text to reserve layout space and prevent reflow
+                Text(
+                    text = sanitizedLine,
+                    style = style,
+                    color = Color.Transparent,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = sanitizedLine,
+                    style = style,
+                    color = lineColor,
+                    fontWeight = if (isCurrentLine) FontWeight.Bold else FontWeight.Normal,
+                )
+            }
+            if (!translationText.isNullOrBlank()) {
+                Text(
+                    text = translationText,
+                    style = translationStyle,
+                    color = translationColor,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
         }
     } else {
         val highlightedWordIndex by remember(position, sanitizedWords, line.time, lineEndTime) {
@@ -1169,26 +1185,37 @@ fun LyricLineRow(
             }
         }
 
-        FlowRow(
+        Column(
             modifier = animatedModifier
                 .clip(RoundedCornerShape(12.dp))
                 .clickable { onClick() }
-                .padding(vertical = verticalPadding, horizontal = 2.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+                .padding(vertical = verticalPadding, horizontal = 2.dp)
         ) {
-            sanitizedWords.forEachIndexed { wordIndex, word ->
-                key("${line.time}_${word.time}_${word.word}") {
-                    LyricWordSpan(
-                        word = word,
-                        isHighlighted = isCurrentLine && wordIndex == highlightedWordIndex,
-                        useAnimatedLyrics = useAnimatedLyrics,
-                        style = style,
-                        highlightedColor = accentColor,
-                        unhighlightedColor = unhighlightedColor
-                    )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                sanitizedWords.forEachIndexed { wordIndex, word ->
+                    key("${line.time}_${word.time}_${word.word}") {
+                        LyricWordSpan(
+                            word = word,
+                            isHighlighted = isCurrentLine && wordIndex == highlightedWordIndex,
+                            useAnimatedLyrics = useAnimatedLyrics,
+                            style = style,
+                            highlightedColor = accentColor,
+                            unhighlightedColor = unhighlightedColor
+                        )
+                    }
                 }
-            } // End Column
+            }
+            if (!translationText.isNullOrBlank()) {
+                Text(
+                    text = translationText,
+                    style = translationStyle,
+                    color = translationColor,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
         }
     }
 }

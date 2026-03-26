@@ -103,6 +103,7 @@ class SongMetadataEditor(
         newGenre: String,
         newLyrics: String,
         newTrackNumber: Int,
+        newDiscNumber: Int?,
         coverArtUpdate: CoverArtUpdate? = null,
     ): SongMetadataEditResult {
         // Input validation first
@@ -181,6 +182,7 @@ class SongMetadataEditor(
                     newGenre = trimmedGenre,
                     newLyrics = trimmedLyrics,
                     newTrackNumber = newTrackNumber,
+                    newDiscNumber = newDiscNumber,
                     coverArtUpdate = coverArtUpdate
                 )
             }
@@ -226,7 +228,8 @@ class SongMetadataEditor(
                     artist = newArtist,
                     album = newAlbum,
                     genre = trimmedGenre,
-                    trackNumber = newTrackNumber
+                    trackNumber = newTrackNumber,
+                    discNumber = newDiscNumber
                 )
     
                 if (!mediaStoreSuccess) {
@@ -244,7 +247,8 @@ class SongMetadataEditor(
                     newArtist,
                     newAlbum,
                     normalizedGenre,
-                    newTrackNumber
+                    newTrackNumber,
+                    newDiscNumber
                 )
 
                 coverArtUpdate?.let {
@@ -378,6 +382,7 @@ class SongMetadataEditor(
         newGenre: String,
         newLyrics: String,
         newTrackNumber: Int,
+        newDiscNumber: Int?,
         coverArtUpdate: CoverArtUpdate? = null
     ): Boolean {
         // Check for problematic FLAC files first
@@ -416,6 +421,11 @@ class SongMetadataEditor(
                 propertyMap.upsertOrRemove("GENRE", newGenre)
                 propertyMap.upsertOrRemove("LYRICS", newLyrics)
                 propertyMap["TRACKNUMBER"] = arrayOf(newTrackNumber.toString())
+                if (newDiscNumber != null && newDiscNumber > 0) {
+                    propertyMap["DISCNUMBER"] = arrayOf(newDiscNumber.toString())
+                } else {
+                    propertyMap.remove("DISCNUMBER")
+                }
                 propertyMap["ALBUMARTIST"] = arrayOf(newArtist)
                 Log.e(TAG, "TAGLIB: Updated property map, saving...")
 
@@ -472,7 +482,8 @@ class SongMetadataEditor(
         newAlbum: String,
         newGenre: String,
         newLyrics: String,
-        newTrackNumber: Int
+        newTrackNumber: Int,
+        newDiscNumber: Int?
     ): Boolean {
         val audioFile = File(filePath)
         val originalExtension = audioFile.extension
@@ -500,6 +511,7 @@ class SongMetadataEditor(
             tags.removeComments("GENRE")
             tags.removeComments("LYRICS")
             tags.removeComments("TRACKNUMBER")
+            tags.removeComments("DISCNUMBER")
             tags.removeComments("ALBUMARTIST")
             
             // Add new values (only if not blank)
@@ -512,6 +524,7 @@ class SongMetadataEditor(
             if (newGenre.isNotBlank()) tags.addComment("GENRE", newGenre)
             if (newLyrics.isNotBlank()) tags.addComment("LYRICS", newLyrics)
             if (newTrackNumber > 0) tags.addComment("TRACKNUMBER", newTrackNumber.toString())
+            if (newDiscNumber != null && newDiscNumber > 0) tags.addComment("DISCNUMBER", newDiscNumber.toString())
             
             Log.e(TAG, "VORBISJAVA: Updated tags: ${tags.allComments}")
             
@@ -582,7 +595,8 @@ class SongMetadataEditor(
         artist: String,
         album: String,
         genre: String,
-        trackNumber: Int
+        trackNumber: Int,
+        discNumber: Int?
     ): Boolean {
         return try {
             val uri = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, songId)
@@ -592,7 +606,8 @@ class SongMetadataEditor(
                 put(MediaStore.Audio.Media.ARTIST, artist)
                 put(MediaStore.Audio.Media.ALBUM, album)
                 put(MediaStore.Audio.Media.GENRE, genre)
-                put(MediaStore.Audio.Media.TRACK, trackNumber)
+                val encodedTrack = ((discNumber ?: 0) * 1000) + trackNumber
+                put(MediaStore.Audio.Media.TRACK, encodedTrack)
                 put(MediaStore.Audio.Media.DATE_MODIFIED, System.currentTimeMillis() / 1000)
                 put(MediaStore.Audio.Media.ALBUM_ARTIST, artist)
             }
@@ -698,8 +713,8 @@ class SongMetadataEditor(
     }
 }
 
-private fun MutableMap<String, Array<String>>.upsertOrRemove(key: String, value: String) {
-    if (value.isBlank()) {
+private fun MutableMap<String, Array<String>>.upsertOrRemove(key: String, value: String?) {
+    if (value.isNullOrBlank()) {
         remove(key)
     } else {
         this[key] = arrayOf(value)

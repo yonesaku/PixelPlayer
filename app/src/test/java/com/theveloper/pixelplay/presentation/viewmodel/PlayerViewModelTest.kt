@@ -389,6 +389,27 @@ class PlayerViewModelTest {
         assertEquals(Player.REPEAT_MODE_OFF, controllerRepeatMode)
     }
 
+    @Test
+    fun `album navigation from player accepts synthetic negative album ids`() = runTest {
+        playerViewModel.albumNavigationRequests.test {
+            playerViewModel.triggerAlbumNavigationFromPlayer(-42L)
+            advanceUntilIdle()
+
+            assertEquals(-42L, awaitItem())
+            cancelAndConsumeRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `album navigation from player still ignores sentinel album id`() = runTest {
+        playerViewModel.albumNavigationRequests.test {
+            playerViewModel.triggerAlbumNavigationFromPlayer(-1L)
+            advanceUntilIdle()
+
+            expectNoEvents()
+        }
+    }
+
     @Nested
     @DisplayName("Shuffle Functionality")
     inner class ShuffleFunctionalityTests {

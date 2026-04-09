@@ -1,5 +1,6 @@
 package com.theveloper.pixelplay.data.ai
 
+
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -16,18 +17,27 @@ enum class AiSystemPromptType {
 class AiSystemPromptEngine @Inject constructor() {
 
     fun buildPrompt(basePersona: String, type: AiSystemPromptType, context: String = ""): String {
+        // AI Optimization: Layered prompts ensure strict format adherence while preserving personality
         val requirementLayer = when (type) {
             AiSystemPromptType.PLAYLIST -> """
                 ---
+                MUSICAL OBJECTIVE:
+                Create a cohesive sonic journey. Prioritize track flow, harmonic compatibility, and genre-appropriate energy progression.
+                
                 STRICT OUTPUT RULES:
                 1. Your response MUST be ONLY a raw JSON array of song IDs.
                 2. NO markdown code blocks (no ```json).
                 3. NO conversational text, NO explanations.
                 4. Example: ["id1", "id2", "id3"]
+                5. If no suitable match is found, return an empty array [].
             """.trimIndent()
 
             AiSystemPromptType.METADATA -> """
                 ---
+                OBJECTIVE:
+                Provide highly accurate metadata based on the provided song info. Use standard naming conventions. 
+                For genres, be specific (e.g., 'Synthwave' instead of just 'Electronic').
+                
                 STRICT OUTPUT RULES:
                 1. Your response MUST be ONLY a raw JSON object matching this schema: 
                    {"title": "...", "artist": "...", "album": "...", "genre": "..."}
@@ -38,33 +48,43 @@ class AiSystemPromptEngine @Inject constructor() {
             AiSystemPromptType.TAGGING -> """
                 ---
                 STRICT OUTPUT RULES:
-                1. Provide a list of 5-8 descriptive tags (experimental, vibe-based).
-                2. Return as a CSV string. No JSON, no markdown.
-                3. Example: lo-fi, chill, nocturnal, rainy, study
+                1. Provide 5-8 descriptive, evocative tags. 
+                2. Mix technical (e.g. '808-heavy', 'reverb-drenched') with atmospheric (e.g. 'liminal', 'neon-lit', 'melancholic').
+                3. Return as a CSV string. No JSON, no markdown.
+                4. Example: lo-fi, chill, nocturnal, rainy, study, vinyl-crackle
             """.trimIndent()
 
             AiSystemPromptType.MOOD_ANALYSIS -> """
                 ---
                 STRICT OUTPUT RULES:
-                1. Return a single word representing the primary mood.
-                2. Then a 0-1 score for Energy, Valence, and Danceability.
-                3. Format: Mood | Energy:0.X | Valence:0.X | Danceability:0.X
+                1. Return a single word for the primary mood.
+                2. Provide 0-1 scores for Energy, Valence, Danceability, and Acousticness.
+                3. Format: Mood | Energy:0.X | Valence:0.X | Danceability:0.X | Acousticness:0.X
             """.trimIndent()
 
             AiSystemPromptType.PERSONA -> """
                 ---
-                STRICT OUTPUT RULES:
-                1. Adopt the persona described in the context.
-                2. Keep responses brief and relevant to the user's music taste.
+                INSTRUCTIONS:
+                1. Adopt the persona of a sophisticated musical curator and sonic expert.
+                2. Use descriptive, slightly poetic language when describing music.
+                3. Keep responses concise but impactful.
+                4. Reference the user's listening profile metrics to make responses feel personal.
             """.trimIndent()
 
-            AiSystemPromptType.GENERAL -> ""
+            AiSystemPromptType.GENERAL -> """
+                ---
+                STRICT OUTPUT RULES:
+                1. Respond clearly and concisely.
+                2. If the user asks about music, provide expert insights.
+            """.trimIndent()
         }
 
+        // AI Integration: Inject real-time user metrics and playback history for deep personalization
         val contextLayer = if (context.isNotBlank()) {
             "--- USER_CONTEXT_START ---\n$context\n--- USER_CONTEXT_END ---"
         } else ""
 
+        // AI Optimization: The core prompt is assembled from persona, context, and specialized requirements
         return """
             $basePersona
             

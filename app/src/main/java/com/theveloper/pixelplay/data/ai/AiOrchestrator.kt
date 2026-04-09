@@ -1,5 +1,6 @@
 package com.theveloper.pixelplay.data.ai
 
+
 import com.theveloper.pixelplay.data.ai.provider.AiClientFactory
 import com.theveloper.pixelplay.data.ai.provider.AiProvider
 import com.theveloper.pixelplay.data.database.AiCacheDao
@@ -61,6 +62,22 @@ class AiOrchestrator @Inject constructor(
         temperature: Float = 0.7f,
         context: String = ""
     ): String {
+        // Dynamic temperature adjustment if default value is used
+        val resolvedTemperature = if (temperature == 0.7f) {
+            when (type) {
+                // AI Optimization: Use low temperature for high-precision metadata to prevent hallucinations
+                AiSystemPromptType.METADATA -> 0.1f
+                AiSystemPromptType.MOOD_ANALYSIS -> 0.2f
+                // AI Optimization: Moderate temperature for tags to allow creative yet relevant descriptors
+                AiSystemPromptType.TAGGING -> 0.4f
+                // AI Optimization: Balanced temperature for playlists to ensure variety without losing cohesion
+                AiSystemPromptType.PLAYLIST -> 0.6f
+                // AI Optimization: High temperature for persona-based responses to increase flair and engagement
+                AiSystemPromptType.PERSONA -> 0.85f
+                AiSystemPromptType.GENERAL -> 0.7f
+            }
+        } else temperature
+
         // Determine chain based on user preference
         val userProviderStr = preferencesRepo.aiProvider.first()
         val userProvider = AiProvider.fromString(userProviderStr)
@@ -83,7 +100,7 @@ class AiOrchestrator @Inject constructor(
         if (userProvider != AiProvider.GEMINI) providersToTry.add(AiProvider.GEMINI)
         if (userProvider != AiProvider.DEEPSEEK) providersToTry.add(AiProvider.DEEPSEEK)
         
-        var lastException: Exception? = null
+        val failedProviders = mutableListOf<String>()
         val now = System.currentTimeMillis()
         
         for (provider in providersToTry) {
@@ -98,25 +115,27 @@ class AiOrchestrator @Inject constructor(
                 val model = getModel(provider)
                 // Use the shared base persona but specialized type rules for each provider in the chain
                 val providerPersona = getBasePersona(provider)
-                val finalSystemPrompt = promptEngine.buildPrompt(providerPersona, type)
+                val finalSystemPrompt = promptEngine.buildPrompt(providerPersona, type, context)
                 
                 val client = clientFactory.createClient(provider, apiKey)
                 val response = client.generateContent(
                     model.ifBlank { client.getDefaultModel() }, 
                     finalSystemPrompt,
                     prompt,
-                    temperature
+                    resolvedTemperature
                 )
                 
                 cacheDao.insert(AiCacheEntity(promptHash = hash, responseJson = response, timestamp = System.currentTimeMillis()))
                 return response
             } catch (e: Exception) {
-                lastException = e
-                // Trigger cooldown on critical failures (auth, network)
+                // AI Optimization: Robust failover logic—if one provider fails, we log and try the next in the chain
+                failedProviders.add("${provider.name}: ${e.message}")
+                // Trigger cooldown on critical failures (auth, network) to prevent repeated stalls
                 providerCooldowns[provider] = now + COOLDOWN_DURATION_MS
             }
         }
         
-        throw Exception("All AI providers failed. Check your API keys. Last error: ${lastException?.message}", lastException)
+        // AI Integration: Bubble up a detailed error if all providers in the chain fail
+        throw Exception("AI Generation failed. Tried ${failedProviders.size} providers: ${failedProviders.joinToString(" | ")}")
     }
 }

@@ -197,6 +197,15 @@ class SettingsViewModel @Inject constructor(
 
     val mistralSystemPrompt: StateFlow<String> = aiPreferencesRepository.mistralSystemPrompt
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AiPreferencesRepository.DEFAULT_MISTRAL_SYSTEM_PROMPT)
+
+    val openaiApiKey: StateFlow<String> = aiPreferencesRepository.openaiApiKey
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    val openaiModel: StateFlow<String> = aiPreferencesRepository.openaiModel
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    val openaiSystemPrompt: StateFlow<String> = aiPreferencesRepository.openaiSystemPrompt
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AiPreferencesRepository.DEFAULT_OPENAI_SYSTEM_PROMPT)
     
     // AI Provider Settings
     val aiProvider: StateFlow<String> = aiPreferencesRepository.aiProvider
@@ -790,6 +799,10 @@ class SettingsViewModel @Inject constructor(
                 "DEEPSEEK" -> deepseekApiKey.value
                 "GROQ" -> groqApiKey.value
                 "MISTRAL" -> mistralApiKey.value
+                "NVIDIA" -> nvidiaApiKey.value
+                "KIMI" -> kimiApiKey.value
+                "GLM" -> glmApiKey.value
+                "OPENAI" -> openaiApiKey.value
                 else -> ""
             }
 
@@ -831,6 +844,38 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun onNvidiaApiKeyChange(apiKey: String) {
+        viewModelScope.launch {
+            aiPreferencesRepository.setNvidiaApiKey(apiKey)
+            if (apiKey.isNotBlank()) fetchAvailableModels(apiKey, "NVIDIA")
+            else clearModelsState("NVIDIA")
+        }
+    }
+
+    fun onKimiApiKeyChange(apiKey: String) {
+        viewModelScope.launch {
+            aiPreferencesRepository.setKimiApiKey(apiKey)
+            if (apiKey.isNotBlank()) fetchAvailableModels(apiKey, "KIMI")
+            else clearModelsState("KIMI")
+        }
+    }
+
+    fun onGlmApiKeyChange(apiKey: String) {
+        viewModelScope.launch {
+            aiPreferencesRepository.setGlmApiKey(apiKey)
+            if (apiKey.isNotBlank()) fetchAvailableModels(apiKey, "GLM")
+            else clearModelsState("GLM")
+        }
+    }
+
+    fun onOpenAiApiKeyChange(apiKey: String) {
+        viewModelScope.launch {
+            aiPreferencesRepository.setOpenAiApiKey(apiKey)
+            if (apiKey.isNotBlank()) fetchAvailableModels(apiKey, "OPENAI")
+            else clearModelsState("OPENAI")
+        }
+    }
+
     private fun clearModelsState(provider: String) {
         _uiState.update {
             it.copy(
@@ -844,6 +889,10 @@ class SettingsViewModel @Inject constructor(
                 "DEEPSEEK" -> aiPreferencesRepository.setDeepseekModel("")
                 "GROQ" -> aiPreferencesRepository.setGroqModel("")
                 "MISTRAL" -> aiPreferencesRepository.setMistralModel("")
+                "NVIDIA" -> aiPreferencesRepository.setNvidiaModel("")
+                "KIMI" -> aiPreferencesRepository.setKimiModel("")
+                "GLM" -> aiPreferencesRepository.setGlmModel("")
+                "OPENAI" -> aiPreferencesRepository.setOpenAiModel("")
             }
         }
     }
@@ -871,6 +920,10 @@ class SettingsViewModel @Inject constructor(
                     "DEEPSEEK" -> deepseekModel.value
                     "GROQ" -> groqModel.value
                     "MISTRAL" -> mistralModel.value
+                    "NVIDIA" -> nvidiaModel.value
+                    "KIMI" -> kimiModel.value
+                    "GLM" -> glmModel.value
+                    "OPENAI" -> openaiModel.value
                     else -> ""
                 }
                 
@@ -881,6 +934,10 @@ class SettingsViewModel @Inject constructor(
                         "DEEPSEEK" -> aiPreferencesRepository.setDeepseekModel(firstModel)
                         "GROQ" -> aiPreferencesRepository.setGroqModel(firstModel)
                         "MISTRAL" -> aiPreferencesRepository.setMistralModel(firstModel)
+                        "NVIDIA" -> aiPreferencesRepository.setNvidiaModel(firstModel)
+                        "KIMI" -> aiPreferencesRepository.setKimiModel(firstModel)
+                        "GLM" -> aiPreferencesRepository.setGlmModel(firstModel)
+                        "OPENAI" -> aiPreferencesRepository.setOpenAiModel(firstModel)
                     }
                 }
             } catch (e: Exception) {
@@ -901,10 +958,37 @@ class SettingsViewModel @Inject constructor(
             }
     }
 
-    val deepseekApiKey: StateFlow<String> = aiPreferencesRepository.deepseekApiKey
+    val deepseekModel: StateFlow<String> = aiPreferencesRepository.deepseekModel
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
-    val deepseekModel: StateFlow<String> = aiPreferencesRepository.deepseekModel
+    val groqApiKey: StateFlow<String> = aiPreferencesRepository.groqApiKey
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    val groqModel: StateFlow<String> = aiPreferencesRepository.groqModel
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    val mistralApiKey: StateFlow<String> = aiPreferencesRepository.mistralApiKey
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    val mistralModel: StateFlow<String> = aiPreferencesRepository.mistralModel
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    val nvidiaApiKey: StateFlow<String> = aiPreferencesRepository.nvidiaApiKey
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    val nvidiaModel: StateFlow<String> = aiPreferencesRepository.nvidiaModel
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+    
+    val kimiApiKey: StateFlow<String> = aiPreferencesRepository.kimiApiKey
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    val kimiModel: StateFlow<String> = aiPreferencesRepository.kimiModel
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    val glmApiKey: StateFlow<String> = aiPreferencesRepository.glmApiKey
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    val glmModel: StateFlow<String> = aiPreferencesRepository.glmModel
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
     fun onGeminiModelChange(model: String) {
@@ -923,6 +1007,22 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { aiPreferencesRepository.setMistralModel(model) }
     }
 
+    fun onNvidiaModelChange(model: String) {
+        viewModelScope.launch { aiPreferencesRepository.setNvidiaModel(model) }
+    }
+
+    fun onKimiModelChange(model: String) {
+        viewModelScope.launch { aiPreferencesRepository.setKimiModel(model) }
+    }
+
+    fun onGlmModelChange(model: String) {
+        viewModelScope.launch { aiPreferencesRepository.setGlmModel(model) }
+    }
+
+    fun onOpenAiModelChange(model: String) {
+        viewModelScope.launch { aiPreferencesRepository.setOpenAiModel(model) }
+    }
+
     fun onGeminiSystemPromptChange(prompt: String) {
         viewModelScope.launch { aiPreferencesRepository.setGeminiSystemPrompt(prompt) }
     }
@@ -939,6 +1039,22 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { aiPreferencesRepository.setMistralSystemPrompt(prompt) }
     }
 
+    fun onNvidiaSystemPromptChange(prompt: String) {
+        viewModelScope.launch { aiPreferencesRepository.setNvidiaSystemPrompt(prompt) }
+    }
+
+    fun onKimiSystemPromptChange(prompt: String) {
+        viewModelScope.launch { aiPreferencesRepository.setKimiSystemPrompt(prompt) }
+    }
+
+    fun onGlmSystemPromptChange(prompt: String) {
+        viewModelScope.launch { aiPreferencesRepository.setGlmSystemPrompt(prompt) }
+    }
+
+    fun onOpenAiSystemPromptChange(prompt: String) {
+        viewModelScope.launch { aiPreferencesRepository.setOpenAiSystemPrompt(prompt) }
+    }
+
     fun resetGeminiSystemPrompt() {
         viewModelScope.launch { aiPreferencesRepository.resetGeminiSystemPrompt() }
     }
@@ -953,6 +1069,22 @@ class SettingsViewModel @Inject constructor(
 
     fun resetMistralSystemPrompt() {
         viewModelScope.launch { aiPreferencesRepository.resetMistralSystemPrompt() }
+    }
+
+    fun resetNvidiaSystemPrompt() {
+        viewModelScope.launch { aiPreferencesRepository.resetNvidiaSystemPrompt() }
+    }
+
+    fun resetKimiSystemPrompt() {
+        viewModelScope.launch { aiPreferencesRepository.resetKimiSystemPrompt() }
+    }
+
+    fun resetGlmSystemPrompt() {
+        viewModelScope.launch { aiPreferencesRepository.resetGlmSystemPrompt() }
+    }
+
+    fun resetOpenAiSystemPrompt() {
+        viewModelScope.launch { aiPreferencesRepository.resetOpenAiSystemPrompt() }
     }
 
     fun setNavBarCornerRadius(radius: Int) {

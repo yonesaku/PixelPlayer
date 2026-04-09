@@ -22,6 +22,10 @@ class AiPreferencesRepository @Inject constructor(
         val DEFAULT_DEEPSEEK_SYSTEM_PROMPT = DEFAULT_SYSTEM_PROMPT
         val DEFAULT_GROQ_SYSTEM_PROMPT = DEFAULT_SYSTEM_PROMPT
         val DEFAULT_MISTRAL_SYSTEM_PROMPT = DEFAULT_SYSTEM_PROMPT
+        val DEFAULT_NVIDIA_SYSTEM_PROMPT = DEFAULT_SYSTEM_PROMPT
+        val DEFAULT_KIMI_SYSTEM_PROMPT = DEFAULT_SYSTEM_PROMPT
+        val DEFAULT_GLM_SYSTEM_PROMPT = DEFAULT_SYSTEM_PROMPT
+        val DEFAULT_OPENAI_SYSTEM_PROMPT = DEFAULT_SYSTEM_PROMPT
         
         // Internal specialized prompts are now handled by AiSystemPromptEngine
     }
@@ -42,6 +46,22 @@ class AiPreferencesRepository @Inject constructor(
         val MISTRAL_API_KEY = stringPreferencesKey("mistral_api_key")
         val MISTRAL_MODEL = stringPreferencesKey("mistral_model")
         val MISTRAL_SYSTEM_PROMPT = stringPreferencesKey("mistral_system_prompt")
+
+        val NVIDIA_API_KEY = stringPreferencesKey("nvidia_api_key")
+        val NVIDIA_MODEL = stringPreferencesKey("nvidia_model")
+        val NVIDIA_SYSTEM_PROMPT = stringPreferencesKey("nvidia_system_prompt")
+
+        val KIMI_API_KEY = stringPreferencesKey("kimi_api_key")
+        val KIMI_MODEL = stringPreferencesKey("kimi_model")
+        val KIMI_SYSTEM_PROMPT = stringPreferencesKey("kimi_system_prompt")
+
+        val GLM_API_KEY = stringPreferencesKey("glm_api_key")
+        val GLM_MODEL = stringPreferencesKey("glm_model")
+        val GLM_SYSTEM_PROMPT = stringPreferencesKey("glm_system_prompt")
+
+        val OPENAI_API_KEY = stringPreferencesKey("openai_api_key")
+        val OPENAI_MODEL = stringPreferencesKey("openai_model")
+        val OPENAI_SYSTEM_PROMPT = stringPreferencesKey("openai_system_prompt")
     }
 
     val geminiApiKey: Flow<String> =
@@ -89,6 +109,50 @@ class AiPreferencesRepository @Inject constructor(
     val mistralSystemPrompt: Flow<String> =
         dataStore.data.map { preferences ->
             preferences[Keys.MISTRAL_SYSTEM_PROMPT] ?: DEFAULT_MISTRAL_SYSTEM_PROMPT
+        }
+
+    val nvidiaApiKey: Flow<String> =
+        dataStore.data.map { preferences -> preferences[Keys.NVIDIA_API_KEY] ?: "" }
+
+    val nvidiaModel: Flow<String> =
+        dataStore.data.map { preferences -> preferences[Keys.NVIDIA_MODEL] ?: "" }
+
+    val nvidiaSystemPrompt: Flow<String> =
+        dataStore.data.map { preferences ->
+            preferences[Keys.NVIDIA_SYSTEM_PROMPT] ?: DEFAULT_NVIDIA_SYSTEM_PROMPT
+        }
+
+    val kimiApiKey: Flow<String> =
+        dataStore.data.map { preferences -> preferences[Keys.KIMI_API_KEY] ?: "" }
+
+    val kimiModel: Flow<String> =
+        dataStore.data.map { preferences -> preferences[Keys.KIMI_MODEL] ?: "" }
+
+    val kimiSystemPrompt: Flow<String> =
+        dataStore.data.map { preferences ->
+            preferences[Keys.KIMI_SYSTEM_PROMPT] ?: DEFAULT_KIMI_SYSTEM_PROMPT
+        }
+
+    val glmApiKey: Flow<String> =
+        dataStore.data.map { preferences -> preferences[Keys.GLM_API_KEY] ?: "" }
+
+    val glmModel: Flow<String> =
+        dataStore.data.map { preferences -> preferences[Keys.GLM_MODEL] ?: "" }
+
+    val glmSystemPrompt: Flow<String> =
+        dataStore.data.map { preferences ->
+            preferences[Keys.GLM_SYSTEM_PROMPT] ?: DEFAULT_GLM_SYSTEM_PROMPT
+        }
+
+    val openaiApiKey: Flow<String> =
+        dataStore.data.map { preferences -> preferences[Keys.OPENAI_API_KEY] ?: "" }
+
+    val openaiModel: Flow<String> =
+        dataStore.data.map { preferences -> preferences[Keys.OPENAI_MODEL] ?: "" }
+
+    val openaiSystemPrompt: Flow<String> =
+        dataStore.data.map { preferences ->
+            preferences[Keys.OPENAI_SYSTEM_PROMPT] ?: DEFAULT_OPENAI_SYSTEM_PROMPT
         }
 
     suspend fun setGeminiApiKey(apiKey: String) {
@@ -164,6 +228,78 @@ class AiPreferencesRepository @Inject constructor(
     suspend fun resetMistralSystemPrompt() {
         dataStore.edit { preferences ->
             preferences[Keys.MISTRAL_SYSTEM_PROMPT] = DEFAULT_MISTRAL_SYSTEM_PROMPT
+        }
+    }
+
+    suspend fun setNvidiaApiKey(apiKey: String) {
+        dataStore.edit { preferences -> preferences[Keys.NVIDIA_API_KEY] = apiKey }
+    }
+
+    suspend fun setNvidiaModel(model: String) {
+        dataStore.edit { preferences -> preferences[Keys.NVIDIA_MODEL] = model }
+    }
+
+    suspend fun setNvidiaSystemPrompt(prompt: String) {
+        dataStore.edit { preferences -> preferences[Keys.NVIDIA_SYSTEM_PROMPT] = prompt }
+    }
+
+    suspend fun resetNvidiaSystemPrompt() {
+        dataStore.edit { preferences ->
+            preferences[Keys.NVIDIA_SYSTEM_PROMPT] = DEFAULT_NVIDIA_SYSTEM_PROMPT
+        }
+    }
+
+    suspend fun setKimiApiKey(apiKey: String) {
+        dataStore.edit { preferences -> preferences[Keys.KIMI_API_KEY] = apiKey }
+    }
+
+    suspend fun setKimiModel(model: String) {
+        dataStore.edit { preferences -> preferences[Keys.KIMI_MODEL] = model }
+    }
+
+    suspend fun setKimiSystemPrompt(prompt: String) {
+        dataStore.edit { preferences -> preferences[Keys.KIMI_SYSTEM_PROMPT] = prompt }
+    }
+
+    suspend fun resetKimiSystemPrompt() {
+        dataStore.edit { preferences ->
+            preferences[Keys.KIMI_SYSTEM_PROMPT] = DEFAULT_KIMI_SYSTEM_PROMPT
+        }
+    }
+
+    suspend fun setGlmApiKey(apiKey: String) {
+        dataStore.edit { preferences -> preferences[Keys.GLM_API_KEY] = apiKey }
+    }
+
+    suspend fun setGlmModel(model: String) {
+        dataStore.edit { preferences -> preferences[Keys.GLM_MODEL] = model }
+    }
+
+    suspend fun setGlmSystemPrompt(prompt: String) {
+        dataStore.edit { preferences -> preferences[Keys.GLM_SYSTEM_PROMPT] = prompt }
+    }
+
+    suspend fun resetGlmSystemPrompt() {
+        dataStore.edit { preferences ->
+            preferences[Keys.GLM_SYSTEM_PROMPT] = DEFAULT_GLM_SYSTEM_PROMPT
+        }
+    }
+
+    suspend fun setOpenAiApiKey(apiKey: String) {
+        dataStore.edit { preferences -> preferences[Keys.OPENAI_API_KEY] = apiKey }
+    }
+
+    suspend fun setOpenAiModel(model: String) {
+        dataStore.edit { preferences -> preferences[Keys.OPENAI_MODEL] = model }
+    }
+
+    suspend fun setOpenAiSystemPrompt(prompt: String) {
+        dataStore.edit { preferences -> preferences[Keys.OPENAI_SYSTEM_PROMPT] = prompt }
+    }
+
+    suspend fun resetOpenAiSystemPrompt() {
+        dataStore.edit { preferences ->
+            preferences[Keys.OPENAI_SYSTEM_PROMPT] = DEFAULT_OPENAI_SYSTEM_PROMPT
         }
     }
 }

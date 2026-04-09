@@ -209,6 +209,7 @@ fun SettingsCategoryScreen(
     var showRebuildDatabaseWarning by remember { mutableStateOf(false) }
     var showRegenerateDailyMixDialog by remember { mutableStateOf(false) }
     var showRegenerateStatsDialog by remember { mutableStateOf(false) }
+    var showRegenerateAllPalettesDialog by remember { mutableStateOf(false) }
     var showExportDataDialog by remember { mutableStateOf(false) }
     var showImportFlow by remember { mutableStateOf(false) }
     var exportSections by remember { mutableStateOf(BackupSection.defaultSelection) }
@@ -255,18 +256,25 @@ fun SettingsCategoryScreen(
 
     var showPaletteRegenerateSheet by remember { mutableStateOf(false) }
     var isPaletteRegenerateRunning by remember { mutableStateOf(false) }
+    var isPaletteBulkRegenerateRunning by remember { mutableStateOf(false) }
+    var paletteBulkCompletedCount by remember { mutableStateOf(0) }
+    var paletteBulkTotalCount by remember { mutableStateOf(0) }
     var paletteSongSearchQuery by remember { mutableStateOf("") }
     val paletteRegenerateSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val songsWithAlbumArt = remember(allSongs) {
         allSongs.filter { !it.albumArtUriString.isNullOrBlank() }
     }
-    val filteredPaletteSongs = remember(songsWithAlbumArt, paletteSongSearchQuery) {
+    val paletteRegenerateTargets = remember(songsWithAlbumArt) {
+        songsWithAlbumArt.distinctBy { it.albumArtUriString }
+    }
+    val isAnyPaletteRegenerateRunning = isPaletteRegenerateRunning || isPaletteBulkRegenerateRunning
+    val filteredPaletteSongs = remember(paletteRegenerateTargets, paletteSongSearchQuery) {
         val query = paletteSongSearchQuery.trim()
         if (query.isBlank()) {
-            songsWithAlbumArt
+            paletteRegenerateTargets
         } else {
-            songsWithAlbumArt.filter { song ->
+            paletteRegenerateTargets.filter { song ->
                 song.title.contains(query, ignoreCase = true) ||
                     song.displayArtist.contains(query, ignoreCase = true) ||
                     song.album.contains(query, ignoreCase = true)
@@ -1042,15 +1050,17 @@ fun SettingsCategoryScreen(
                                 )
                                 ActionSettingsItem(
                                     title = "Force Album Palette Regeneration",
-                                    subtitle = if (songsWithAlbumArt.isEmpty()) {
+                                    subtitle = if (paletteRegenerateTargets.isEmpty()) {
                                         "No songs with album art were found."
                                     } else {
-                                        "Pick a song to rebuild all album color variants from scratch."
+                                        "Rebuild all cached palette variants for every album art, or pick a single one to refresh."
                                     },
                                     icon = { Icon(Icons.Outlined.Style, null, tint = MaterialTheme.colorScheme.secondary) },
-                                    primaryActionLabel = "Choose Song",
-                                    onPrimaryAction = { showPaletteRegenerateSheet = true },
-                                    enabled = songsWithAlbumArt.isNotEmpty() && !isPaletteRegenerateRunning
+                                    primaryActionLabel = if (isPaletteBulkRegenerateRunning) "Regenerating..." else "Regenerate All",
+                                    onPrimaryAction = { showRegenerateAllPalettesDialog = true },
+                                    secondaryActionLabel = "Choose Song",
+                                    onSecondaryAction = { showPaletteRegenerateSheet = true },
+                                    enabled = paletteRegenerateTargets.isNotEmpty() && !isAnyPaletteRegenerateRunning
                                 )
                             }
 
@@ -1158,7 +1168,7 @@ fun SettingsCategoryScreen(
     if (showPaletteRegenerateSheet) {
         ModalBottomSheet(
             onDismissRequest = {
-                if (!isPaletteRegenerateRunning) {
+                if (!isAnyPaletteRegenerateRunning) {
                     showPaletteRegenerateSheet = false
                     paletteSongSearchQuery = ""
                 }
@@ -1172,7 +1182,7 @@ fun SettingsCategoryScreen(
                 onSearchQueryChange = { paletteSongSearchQuery = it },
                 onClearSearch = { paletteSongSearchQuery = "" },
                 onSongClick = { song ->
-                    if (isPaletteRegenerateRunning) return@PaletteRegenerateSongSheetContent
+                    if (isAnyPaletteRegenerateRunning) return@PaletteRegenerateSongSheetContent
                     isPaletteRegenerateRunning = true
                     coroutineScope.launch {
                         val success = playerViewModel.forceRegenerateAlbumPaletteForSong(song)
@@ -1196,6 +1206,126 @@ fun SettingsCategoryScreen(
                 }
             )
         }
+    }
+
+    if (showRegenerateAllPalettesDialog) {
+        AlertDialog(
+            icon = {
+                Icon(
+                    Icons.Outlined.Style,
+                    null,
+                    tint = if (isPaletteBulkRegenerateRunning) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.secondary
+                    }
+                )
+            },
+            title = {
+                Text(
+                    if (isPaletteBulkRegenerateRunning) {
+                        "Regenerating album palettes..."
+                    } else {
+                        "Regenerate all album palettes?"
+                    }
+                )
+            },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = if (isPaletteBulkRegenerateRunning) {
+                            "Rebuilding cached palette variants for $paletteBulkTotalCount unique album arts. This can take a while on large libraries."
+                        } else {
+                            "This will clear cached theme data and rebuild all palette styles for ${paletteRegenerateTargets.size} unique album arts."
+                        }
+                    )
+
+                    if (isPaletteBulkRegenerateRunning) {
+                        val progress = if (paletteBulkTotalCount > 0) {
+                            paletteBulkCompletedCount.toFloat() / paletteBulkTotalCount.toFloat()
+                        } else {
+                            0f
+                        }
+
+                        LinearWavyProgressIndicator(
+                            progress = { progress },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp)
+                                .clip(RoundedCornerShape(50)),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                        )
+
+                        Text(
+                            text = "$paletteBulkCompletedCount of $paletteBulkTotalCount completed",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            },
+            onDismissRequest = {
+                if (!isPaletteBulkRegenerateRunning) {
+                    showRegenerateAllPalettesDialog = false
+                }
+            },
+            confirmButton = {
+                if (isPaletteBulkRegenerateRunning) {
+                    TextButton(
+                        onClick = {},
+                        enabled = false
+                    ) {
+                        Text("Working...")
+                    }
+                } else {
+                    TextButton(
+                        onClick = {
+                            isPaletteBulkRegenerateRunning = true
+                            paletteBulkCompletedCount = 0
+                            paletteBulkTotalCount = paletteRegenerateTargets.size
+
+                            coroutineScope.launch {
+                                var successCount = 0
+                                paletteRegenerateTargets.forEachIndexed { index, song ->
+                                    if (playerViewModel.forceRegenerateAlbumPaletteForSong(song)) {
+                                        successCount++
+                                    }
+                                    paletteBulkCompletedCount = index + 1
+                                }
+
+                                isPaletteBulkRegenerateRunning = false
+                                showRegenerateAllPalettesDialog = false
+
+                                val totalCount = paletteRegenerateTargets.size
+                                Toast.makeText(
+                                    context,
+                                    if (successCount == totalCount) {
+                                        "Regenerated $successCount album art palettes"
+                                    } else {
+                                        "Regenerated $successCount of $totalCount album art palettes"
+                                    },
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+                    ) {
+                        Text("Regenerate")
+                    }
+                }
+            },
+            dismissButton = {
+                if (!isPaletteBulkRegenerateRunning) {
+                    TextButton(
+                        onClick = { showRegenerateAllPalettesDialog = false }
+                    ) {
+                        Text("Cancel")
+                    }
+                }
+            }
+        )
     }
     
      // Dialogs logic (copied)

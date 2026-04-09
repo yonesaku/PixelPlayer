@@ -19,6 +19,7 @@ import com.theveloper.pixelplay.data.preferences.ThemePreference
 import com.theveloper.pixelplay.data.preferences.UserPreferencesRepository
 import com.theveloper.pixelplay.data.preferences.AiPreferencesRepository
 import com.theveloper.pixelplay.data.preferences.AlbumArtQuality
+import com.theveloper.pixelplay.data.preferences.AlbumArtColorAccuracy
 import com.theveloper.pixelplay.data.preferences.AlbumArtPaletteStyle
 import com.theveloper.pixelplay.data.preferences.CollagePattern
 import com.theveloper.pixelplay.data.preferences.FullPlayerLoadingTweaks
@@ -49,6 +50,7 @@ data class SettingsUiState(
     val appThemeMode: String = AppThemeMode.FOLLOW_SYSTEM,
     val playerThemePreference: String = ThemePreference.ALBUM_ART,
     val albumArtPaletteStyle: AlbumArtPaletteStyle = AlbumArtPaletteStyle.default,
+    val albumArtColorAccuracy: Int = AlbumArtColorAccuracy.DEFAULT,
     val mockGenresEnabled: Boolean = false,
     val navBarCornerRadius: Int = 32,
     val navBarStyle: String = NavBarStyle.DEFAULT,
@@ -124,6 +126,7 @@ private sealed interface SettingsUiUpdate {
         val appThemeMode: String,
         val playerThemePreference: String,
         val albumArtPaletteStyle: AlbumArtPaletteStyle,
+        val albumArtColorAccuracy: Int,
         val mockGenresEnabled: Boolean,
         val navBarCornerRadius: Int,
         val navBarStyle: String,
@@ -159,6 +162,7 @@ class SettingsViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
     private val aiPreferencesRepository: AiPreferencesRepository,
     private val themePreferencesRepository: ThemePreferencesRepository,
+    private val colorSchemeProcessor: ColorSchemeProcessor,
     private val syncManager: SyncManager,
     private val aiClientFactory: AiClientFactory,
     private val lyricsRepository: LyricsRepository,
@@ -256,6 +260,7 @@ class SettingsViewModel @Inject constructor(
                 themePreferencesRepository.appThemeModeFlow,
                 themePreferencesRepository.playerThemePreferenceFlow,
                 themePreferencesRepository.albumArtPaletteStyleFlow,
+                themePreferencesRepository.albumArtColorAccuracyFlow,
                 userPreferencesRepository.mockGenresEnabledFlow,
                 userPreferencesRepository.navBarCornerRadiusFlow,
                 userPreferencesRepository.navBarStyleFlow,
@@ -270,14 +275,15 @@ class SettingsViewModel @Inject constructor(
                     appThemeMode = values[1] as String,
                     playerThemePreference = values[2] as String,
                     albumArtPaletteStyle = values[3] as AlbumArtPaletteStyle,
-                    mockGenresEnabled = values[4] as Boolean,
-                    navBarCornerRadius = values[5] as Int,
-                    navBarStyle = values[6] as String,
-                    navBarCompactMode = values[7] as Boolean,
-                    libraryNavigationMode = values[8] as String,
-                    carouselStyle = values[9] as String,
-                    launchTab = values[10] as String,
-                    showPlayerFileInfo = values[11] as Boolean
+                    albumArtColorAccuracy = values[4] as Int,
+                    mockGenresEnabled = values[5] as Boolean,
+                    navBarCornerRadius = values[6] as Int,
+                    navBarStyle = values[7] as String,
+                    navBarCompactMode = values[8] as Boolean,
+                    libraryNavigationMode = values[9] as String,
+                    carouselStyle = values[10] as String,
+                    launchTab = values[11] as String,
+                    showPlayerFileInfo = values[12] as Boolean
                 )
             }.collect { update ->
                 _uiState.update { state ->
@@ -286,6 +292,7 @@ class SettingsViewModel @Inject constructor(
                         appThemeMode = update.appThemeMode,
                         playerThemePreference = update.playerThemePreference,
                         albumArtPaletteStyle = update.albumArtPaletteStyle,
+                        albumArtColorAccuracy = update.albumArtColorAccuracy,
                         mockGenresEnabled = update.mockGenresEnabled,
                         navBarCornerRadius = update.navBarCornerRadius,
                         navBarStyle = update.navBarStyle,
@@ -497,6 +504,27 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             themePreferencesRepository.setAlbumArtPaletteStyle(style)
         }
+    }
+
+    fun setAlbumArtPaletteSettings(
+        style: AlbumArtPaletteStyle,
+        accuracyLevel: Int
+    ) {
+        viewModelScope.launch {
+            themePreferencesRepository.setAlbumArtPaletteSettings(style, accuracyLevel)
+        }
+    }
+
+    suspend fun getAlbumArtPalettePreview(
+        uriString: String,
+        style: AlbumArtPaletteStyle,
+        accuracyLevel: Int
+    ): ColorSchemePair? {
+        return colorSchemeProcessor.getPreviewColorScheme(
+            albumArtUri = uriString,
+            paletteStyle = style,
+            colorAccuracyLevel = accuracyLevel
+        )
     }
 
     fun setCollagePattern(pattern: CollagePattern) {

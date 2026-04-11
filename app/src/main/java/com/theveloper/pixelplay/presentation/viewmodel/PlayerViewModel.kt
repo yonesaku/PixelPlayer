@@ -825,6 +825,29 @@ class PlayerViewModel @Inject constructor(
         playbackStateHolder.initialize(viewModelScope)
         themeStateHolder.initialize(viewModelScope)
 
+        // On cold start, the MediaController connects asynchronously, leaving stablePlayerState.currentSong
+        // null until that happens. Pre-load the palette from the persisted snapshot so the mini player
+        // has the correct colors immediately on first render, before the controller is ready.
+        viewModelScope.launch {
+            val snapshot = runCatching {
+                userPreferencesRepository.getPlaybackQueueSnapshotOnce()
+            }.getOrNull() ?: return@launch
+
+            val currentItem = if (snapshot.currentMediaId != null) {
+                snapshot.items.find { it.mediaId == snapshot.currentMediaId }
+            } else {
+                snapshot.items.getOrNull(snapshot.currentIndex)
+            } ?: return@launch
+
+            val artworkUri = currentItem.artworkUri?.takeIf { it.isNotBlank() } ?: return@launch
+
+            themeStateHolder.extractAndGenerateColorScheme(
+                albumArtUriAsUri = artworkUri.toUri(),
+                currentSongUriString = artworkUri,
+                isPreload = false
+            )
+        }
+
         stablePlayerState
             .map { it.currentSong?.albumArtUriString?.takeIf { uri -> uri.isNotBlank() } }
             .distinctUntilChanged()

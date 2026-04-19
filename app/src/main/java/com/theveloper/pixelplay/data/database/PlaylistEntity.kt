@@ -45,7 +45,13 @@ data class PlaylistEntity(
     @ColumnInfo(name = "source")
     val source: String = "LOCAL",
 )
+    val PlaylistEntity.displayName: String
+    get() = name.substringBefore('\n').trim()
 
+    val PlaylistEntity.description: String?
+    get() = name.indexOf('\n').takeIf { it >= 0 }?.let {
+        name.substring(it + 1).trim().ifBlank { null }
+    }
 fun PlaylistEntity.toPlaylist(songIds: List<String>): Playlist {
     return Playlist(
         id = id,

@@ -990,19 +990,7 @@ constructor(
         var year = raw.year
         var genre: String? = genreMap[raw.id] ?: raw.genre // Use mapped genre as default, or direct genre from main cursor
 
-        val shouldAugmentMetadata =
-                deepScan ||
-                        raw.filePath.endsWith(".wav", true) ||
-                        raw.filePath.endsWith(".opus", true) ||
-                        raw.filePath.endsWith(".ogg", true) ||
-                        raw.filePath.endsWith(".oga", true) ||
-                        raw.filePath.endsWith(".aiff", true) ||
-                        // Fallback: if MediaStore returned default/missing metadata,
-                        // try TagLib+JAudioTagger to read actual tags from the file.
-                        // MediaStore uses "<unknown>" for unreadable fields;
-                        // our normalization may produce "Unknown Artist"/"Unknown Album".
-                        isDefaultMetadata(raw.artist) ||
-                        isDefaultMetadata(raw.album)
+        val shouldAugmentMetadata = true
 
         if (shouldAugmentMetadata) {
             val file = java.io.File(raw.filePath)

@@ -1,0 +1,35 @@
+name: Build Phone APK (Release)
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build-phone:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build Phone Release APK (with debug key)
+        run: ./gradlew :app:assembleRelease
+
+      - name: Upload Phone APK artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: PixelPlay-phone-only-release
+          path: app/build/outputs/apk/release/*.apk

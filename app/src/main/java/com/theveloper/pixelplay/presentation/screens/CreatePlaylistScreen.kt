@@ -994,24 +994,25 @@ private fun PlaylistFormContent(
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             
-            OutlinedTextField(
-                value = playlistName,
-                onValueChange = onNameChange,
-                label = { Text("Playlist Name") },
-                placeholder = { Text("My awesome mix") },
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 22.dp),
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent
-                )
-            )
+OutlinedTextField(
+    value = playlistName,
+    onValueChange = onNameChange,
+    label = { Text("Playlist Name") },
+    placeholder = { Text("My awesome mix\nSecond line onwards is the description") },
+    shape = RoundedCornerShape(16.dp),
+    modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 22.dp),
+    singleLine = false,
+    maxLines = 5,
+    colors = OutlinedTextFieldDefaults.colors(
+        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        focusedBorderColor = Color.Transparent,
+        unfocusedBorderColor = Color.Transparent
+    )
+)
             
             Spacer(modifier = Modifier.height(8.dp))
 

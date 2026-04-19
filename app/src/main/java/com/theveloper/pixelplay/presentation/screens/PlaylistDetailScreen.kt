@@ -104,8 +104,8 @@ import androidx.navigation.NavController
 import coil.size.Size
 import com.theveloper.pixelplay.R
 import com.theveloper.pixelplay.data.model.Song
-import com.theveloper.pixelplay.data.database.displayName
-import com.theveloper.pixelplay.data.database.description
+import com.theveloper.pixelplay.data.model.displayName
+import com.theveloper.pixelplay.data.model.description
 import com.theveloper.pixelplay.presentation.components.MiniPlayerHeight
 import com.theveloper.pixelplay.presentation.components.PlaylistBottomSheet
 import com.theveloper.pixelplay.presentation.components.QueuePlaylistSongItem

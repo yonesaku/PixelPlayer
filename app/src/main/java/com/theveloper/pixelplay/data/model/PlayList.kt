@@ -23,6 +23,13 @@ data class Playlist(
     val coverShapeDetail3: Float? = null, // e.g., StarScale
     val coverShapeDetail4: Float? = null, // e.g., Star Sides (Int)
     val source: String = "LOCAL" // Source: "LOCAL", "NETEASE", "TELEGRAM", "AI", etc.
+    val Playlist.displayName: String
+    get() = name.substringBefore('\n').trim()
+
+    val Playlist.description: String?
+    get() = name.indexOf('\n').takeIf { it >= 0 }?.let {
+        name.substring(it + 1).trim().ifBlank { null }
+    }
 )
 
 enum class PlaylistShapeType {

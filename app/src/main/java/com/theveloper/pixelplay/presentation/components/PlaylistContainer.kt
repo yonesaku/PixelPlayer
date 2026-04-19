@@ -434,7 +434,7 @@ fun PlaylistItem(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = playlist.name,
+                        text = playlist.displayName,
                         style = MaterialTheme.typography.titleMedium.copy(fontFamily = GoogleSansRounded),
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,

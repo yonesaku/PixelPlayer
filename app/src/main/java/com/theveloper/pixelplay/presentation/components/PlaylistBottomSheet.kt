@@ -70,7 +70,7 @@ fun PlaylistBottomSheet(
     var searchQuery by remember { mutableStateOf("") }
     val filteredPlaylists = remember(searchQuery, playlistUiState.playlists) {
         if (searchQuery.isBlank()) playlistUiState.playlists
-        else playlistUiState.playlists.filter { it.name.contains(searchQuery, true) }
+        else playlistUiState.playlists.filter { it.displayName.contains(searchQuery, true) }
     }
     val hasActiveAiProviderApiKey by playerViewModel.hasActiveAiProviderApiKey.collectAsStateWithLifecycle()
 

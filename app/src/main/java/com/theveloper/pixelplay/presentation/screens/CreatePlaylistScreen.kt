@@ -250,16 +250,16 @@ private fun CreatePlaylistContent(
 
     // Shared State
     var playlistName by remember { mutableStateOf("") }
-    
+
     // Step 1: Info State
     var currentStep by remember { mutableStateOf(0) } // 0: Info, 1: Songs
     var selectedTab by remember { mutableStateOf(0) } // 0: Default, 1: Image, 2: Icon
     var creationMode by remember { mutableStateOf(PlaylistCreationMode.MANUAL) }
     var selectedSmartRule by remember { mutableStateOf(SmartPlaylistRule.TOP_PLAYED) }
-    
+
     // Songs State
     val selectedSongIds = remember { mutableStateMapOf<String, Boolean>() }
-    
+
     // Image State
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var showCropUi by remember { mutableStateOf(false) }
@@ -277,11 +277,11 @@ private fun CreatePlaylistContent(
 
     // Shape State
     var selectedShapeType by remember { mutableStateOf(PlaylistShapeType.Circle) }
-    
+
     // SmoothRect Params
     var smoothRectCornerRadius by remember { androidx.compose.runtime.mutableFloatStateOf(20f) } // 0-50
     var smoothRectSmoothness by remember { androidx.compose.runtime.mutableFloatStateOf(60f) } // 0-100
-    
+
     var starCurve by remember { androidx.compose.runtime.mutableDoubleStateOf(0.15) } // 0.0 - 0.5
     var starRotation by remember { androidx.compose.runtime.mutableFloatStateOf(0f) } // 0 - 360
     var starScale by remember { androidx.compose.runtime.mutableFloatStateOf(1f) } // 0.5 - 1.5
@@ -294,7 +294,7 @@ private fun CreatePlaylistContent(
                  .data(selectedImageUri)
                  .allowHardware(false)
                  .build()
-             
+
              val result = loader.execute(request)
              val drawable = result.drawable
              if (drawable is android.graphics.drawable.BitmapDrawable) {
@@ -315,7 +315,7 @@ private fun CreatePlaylistContent(
             showCropUi = true
         }
     }
-    
+
     // Back Handler for Step 2
     BackHandler(enabled = currentStep == 1 && creationMode == PlaylistCreationMode.MANUAL) {
         currentStep = 0
@@ -431,11 +431,11 @@ private fun CreatePlaylistContent(
                             val imageUriString = if(selectedTab == 1) selectedImageUri?.toString() else null
                             val color = if(selectedTab == 2) selectedColor else null
                             val icon = if(selectedTab == 2) selectedIconName else null
-                            
+
                             val scale = if(selectedTab == 1) cropScale else 1f
                             val panX = if(selectedTab == 1) cropOffset.x else 0f
                             val panY = if(selectedTab == 1) cropOffset.y else 0f
-                            
+
                             val shapeTypeForSave = if (selectedTab == 2) selectedShapeType.name else null
                             val (d1, d2, d3, d4) = if (selectedTab == 2) {
                                 when (selectedShapeType) {
@@ -553,10 +553,10 @@ fun EditPlaylistContent(
     onSave: (String, String?, Int?, String?, Float, Float, Float, String?, Float?, Float?, Float?, Float?) -> Unit
 ) {
     val context = LocalContext.current
-    
+
     // Initial State Setup
     var playlistName by remember { mutableStateOf(initialName) }
-    
+
     // Determine initial tab
     // 0=Default, 1=Image, 2=Icon
     // Logic: If imageUri present -> Image. If Color/Icon present -> Icon. Else Default.
@@ -577,7 +577,7 @@ fun EditPlaylistContent(
     var selectedImageUri by remember { mutableStateOf<Uri?>(initialImageUri?.let { Uri.parse(it) }) }
     var showCropUi by remember { mutableStateOf(false) }
     var imageBitmap by remember(selectedImageUri) { mutableStateOf<ImageBitmap?>(null) }
-    
+
     // Crop: We don't store crop params in DB currently for playlist updates properly unless we re-save image.
     // But assuming we start with scale 1f if editing.
     var cropScale by remember { androidx.compose.runtime.mutableFloatStateOf(1f) }
@@ -588,11 +588,11 @@ fun EditPlaylistContent(
     var selectedIconName by remember { mutableStateOf(initialIconName ?: "MusicNote") }
 
     var selectedShapeType by remember { mutableStateOf(initialShapeType ?: PlaylistShapeType.Circle) }
-    
+
     // Shape Params
     var smoothRectCornerRadius by remember { androidx.compose.runtime.mutableFloatStateOf(initialShapeDetail1 ?: 20f) }
     var smoothRectSmoothness by remember { androidx.compose.runtime.mutableFloatStateOf(initialShapeDetail2 ?: 60f) }
-    
+
     var starCurve by remember { androidx.compose.runtime.mutableDoubleStateOf(initialShapeDetail1?.toDouble() ?: 0.15) }
     var starRotation by remember { androidx.compose.runtime.mutableFloatStateOf(initialShapeDetail2 ?: 0f) }
     var starScale by remember { androidx.compose.runtime.mutableFloatStateOf(initialShapeDetail3 ?: 1f) }
@@ -671,11 +671,11 @@ fun EditPlaylistContent(
                         val imageUriString = if(selectedTab == 1) selectedImageUri?.toString() else null
                         val color = if(selectedTab == 2) selectedColor else null
                         val icon = if(selectedTab == 2) selectedIconName else null
-                        
+
                         val scale = if(selectedTab == 1) cropScale else 1f
                         val panX = if(selectedTab == 1) cropOffset.x else 0f
                         val panY = if(selectedTab == 1) cropOffset.y else 0f
-                        
+
                         val shapeTypeForSave = if (selectedTab == 2) selectedShapeType.name else null
                         val (d1, d2, d3, d4) = if (selectedTab == 2) {
                             when (selectedShapeType) {
@@ -822,7 +822,7 @@ private fun PlaylistFormContent(
     Column(modifier = modifier
         .fillMaxSize()
         .imePadding()) {
-        
+
          // PREVIEW SECTION
         AnimatedContent(
              targetState = selectedTab,
@@ -950,7 +950,7 @@ private fun PlaylistFormContent(
                                      rotation = starRotation
                                  )
                              }
-                             
+
                              val shapeMod = if(currentShapeType == PlaylistShapeType.RotatedPill) Modifier.graphicsLayer(rotationZ = 45f) else Modifier
                              val iconMod = if(currentShapeType == PlaylistShapeType.RotatedPill) Modifier.graphicsLayer(rotationZ = -45f) else Modifier
                              val scaleMod = if(currentShapeType == PlaylistShapeType.Star) Modifier.graphicsLayer(scaleX = starScale, scaleY = starScale) else Modifier
@@ -993,27 +993,27 @@ private fun PlaylistFormContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            
-OutlinedTextField(
-    value = playlistName,
-    onValueChange = onNameChange,
-    label = { Text("Playlist Name") },
-    placeholder = { Text("My awesome mix\nSecond line onwards is the description") },
-    shape = RoundedCornerShape(16.dp),
-    modifier = Modifier
-        .fillMaxWidth()
-        .padding(horizontal = 22.dp),
-    singleLine = false,
-    maxLines = 5,
-    colors = OutlinedTextFieldDefaults.colors(
-        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        focusedBorderColor = Color.Transparent,
-        unfocusedBorderColor = Color.Transparent
-    )
-)
-            
+
+            OutlinedTextField(
+                value = playlistName,
+                onValueChange = onNameChange,
+                label = { Text("Playlist Name") },
+                placeholder = { Text("My awesome mix") },
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 22.dp),
+                singleLine = false,
+                maxLines = 5,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent
+                )
+            )
+
             Spacer(modifier = Modifier.height(8.dp))
 
             if (showCreationModeSelector) {
@@ -1105,7 +1105,7 @@ OutlinedTextField(
                     .fillMaxWidth()
                     .padding(horizontal = 22.dp)
             )
-        
+
             AnimatedVisibility(visible = selectedTab == 2) {
                  Column(
                      modifier = Modifier.padding(top = 14.dp),
@@ -1118,7 +1118,7 @@ OutlinedTextField(
                          style = MaterialTheme.typography.titleSmall,
                          color = MaterialTheme.colorScheme.onSurfaceVariant
                      )
-                     
+
                      val colors = listOf( 
                          MaterialTheme.colorScheme.primary.toArgb(),
                          MaterialTheme.colorScheme.primaryContainer.toArgb(),
@@ -1131,7 +1131,7 @@ OutlinedTextField(
                          MaterialTheme.colorScheme.surfaceContainerHigh.toArgb(),
                          MaterialTheme.colorScheme.inverseSurface.toArgb()
                      )
-                     
+
                      FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -1142,7 +1142,7 @@ OutlinedTextField(
                          colors.forEach { color ->
                              val isSelected = selectedColor == color
                              val cornerRadius by animateDpAsState(targetValue = if (isSelected) 12.dp else 24.dp, label = "CornerRadius")
-                             
+
                              Box(
                                  modifier = Modifier
                                      .size(52.dp)
@@ -1165,7 +1165,7 @@ OutlinedTextField(
                              }
                          }
                      }
-                     
+
                      Spacer(Modifier.height(8.dp))
 
                      // Icons
@@ -1179,7 +1179,7 @@ OutlinedTextField(
                      val icons = listOf(
                         "MusicNote", "Headphones", "Album", "Mic", "Speaker", "Favorite", "Piano", "Queue"
                      )
-                     
+
                      FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -1266,7 +1266,7 @@ OutlinedTextField(
                              }
                          }
                      }
-                     
+
                      // Params
                      AnimatedVisibility(visible = selectedShapeType == PlaylistShapeType.SmoothRect) {
                          Column(
@@ -1278,7 +1278,7 @@ OutlinedTextField(
                              ShapeParameterCard("Smoothness", smoothRectSmoothness, 0f..100f, onSmoothRectSmoothnessChange, { "${it.toInt()}%" })
                          }
                      }
-                     
+
                      AnimatedVisibility(visible = selectedShapeType == PlaylistShapeType.Star) {
                          Column(
                              modifier = Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 8.dp),
@@ -1409,7 +1409,7 @@ fun ShapeParameterCard(
                      fontWeight = FontWeight.Bold
                 )
             }
-            
+
             // Custom Thick Slider
             ThickSlider(
                 value = value,

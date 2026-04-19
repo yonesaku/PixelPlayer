@@ -17,20 +17,21 @@ data class Playlist(
     val coverImageUri: String? = null,
     val coverColorArgb: Int? = null,
     val coverIconName: String? = null,
-    val coverShapeType: String? = null, // "Circle", "SmoothRect", etc. Storing as String to avoid Enum import issues if moved
-    val coverShapeDetail1: Float? = null, // e.g., CornerRadius / StarCurve
-    val coverShapeDetail2: Float? = null, // e.g., Smoothness / StarRotation
-    val coverShapeDetail3: Float? = null, // e.g., StarScale
-    val coverShapeDetail4: Float? = null, // e.g., Star Sides (Int)
-    val source: String = "LOCAL" // Source: "LOCAL", "NETEASE", "TELEGRAM", "AI", etc.
-    val Playlist.displayName: String
+    val coverShapeType: String? = null,
+    val coverShapeDetail1: Float? = null,
+    val coverShapeDetail2: Float? = null,
+    val coverShapeDetail3: Float? = null,
+    val coverShapeDetail4: Float? = null,
+    val source: String = "LOCAL"
+)
+
+val Playlist.displayName: String
     get() = name.substringBefore('\n').trim()
 
-    val Playlist.description: String?
+val Playlist.description: String?
     get() = name.indexOf('\n').takeIf { it >= 0 }?.let {
         name.substring(it + 1).trim().ifBlank { null }
     }
-)
 
 enum class PlaylistShapeType {
     Circle,

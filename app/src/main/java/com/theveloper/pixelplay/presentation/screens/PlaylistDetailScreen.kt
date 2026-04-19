@@ -243,8 +243,8 @@ fun PlaylistDetailScreen(
                     scrolledContainerColor = Color.Transparent,
                     containerColor = Color.Transparent
                 ),
-                subtitle = {
-                    Column(modifier = Modifier.padding(start = 8.dp)) {
+        subtitle = {
+    Column(modifier = Modifier.padding(start = 8.dp)) {
         Text(
             text = "${formatSongCount(songsInPlaylist.size)} • ${formatTotalDuration(songsInPlaylist)}",
             style = MaterialTheme.typography.labelMedium.copy(fontFamily = GoogleSansRounded),
@@ -260,11 +260,7 @@ fun PlaylistDetailScreen(
             )
         }
     }
-                        }",
-                        style = MaterialTheme.typography.labelMedium.copy(fontFamily = GoogleSansRounded),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                },
+},
                 navigationIcon = {
                     FilledTonalIconButton(
                         modifier = Modifier.padding(start = 10.dp),

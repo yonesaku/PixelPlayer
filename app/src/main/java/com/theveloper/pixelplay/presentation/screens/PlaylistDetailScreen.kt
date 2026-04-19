@@ -104,6 +104,8 @@ import androidx.navigation.NavController
 import coil.size.Size
 import com.theveloper.pixelplay.R
 import com.theveloper.pixelplay.data.model.Song
+import com.theveloper.pixelplay.data.database.displayName
+import com.theveloper.pixelplay.data.database.description
 import com.theveloper.pixelplay.presentation.components.MiniPlayerHeight
 import com.theveloper.pixelplay.presentation.components.PlaylistBottomSheet
 import com.theveloper.pixelplay.presentation.components.QueuePlaylistSongItem
@@ -231,7 +233,7 @@ fun PlaylistDetailScreen(
                 title = {
                     Text(
                         modifier = Modifier.padding(start = 8.dp),
-                        text = currentPlaylist?.name ?: "Playlist",
+                        text = currentPlaylist?.displayName ?: "Playlist",
                         fontFamily = GoogleSansRounded,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -242,12 +244,22 @@ fun PlaylistDetailScreen(
                     containerColor = Color.Transparent
                 ),
                 subtitle = {
-                    Text(
-                        modifier = Modifier.padding(start = 8.dp),
-                        text = "${formatSongCount(songsInPlaylist.size)} • ${
-                            formatTotalDuration(
-                                songsInPlaylist
-                            )
+                    Column(modifier = Modifier.padding(start = 8.dp)) {
+        Text(
+            text = "${formatSongCount(songsInPlaylist.size)} • ${formatTotalDuration(songsInPlaylist)}",
+            style = MaterialTheme.typography.labelMedium.copy(fontFamily = GoogleSansRounded),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        currentPlaylist?.description?.let { desc ->
+            Text(
+                text = desc,
+                style = MaterialTheme.typography.bodySmall.copy(fontFamily = GoogleSansRounded),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
                         }",
                         style = MaterialTheme.typography.labelMedium.copy(fontFamily = GoogleSansRounded),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -331,7 +343,7 @@ fun PlaylistDetailScreen(
                                 playerViewModel.playSongs(
                                     localReorderableSongs,
                                     localReorderableSongs.first(),
-                                    currentPlaylist.name
+                                    currentPlaylist.displayName
                                 )
                                 if (playerStableState.isShuffleEnabled) playerViewModel.toggleShuffle()
                             }
@@ -364,7 +376,7 @@ fun PlaylistDetailScreen(
                             if (localReorderableSongs.isNotEmpty()) {
                                 playerViewModel.playSongsShuffled(
                                     songsToPlay = localReorderableSongs,
-                                    queueName = currentPlaylist.name,
+                                    queueName = currentPlaylist.displayName,
                                     playlistId = currentPlaylist.id,
                                     startAtZero = true,
                                 )
@@ -589,7 +601,7 @@ fun PlaylistDetailScreen(
                                             playerViewModel.playSongs(
                                                 localReorderableSongs,
                                                 song,
-                                                currentPlaylist.name,
+                                                currentPlaylist.displayName,
                                                 currentPlaylist.id
                                             )
                                         },
@@ -736,7 +748,7 @@ fun PlaylistDetailScreen(
                     label = "Export Playlist",
                     onClick = {
                         showPlaylistOptionsSheet = false
-                        m3uExportLauncher.launch("${currentPlaylist?.name ?: "playlist"}.m3u")
+                        m3uExportLauncher.launch("${currentPlaylist?.displayName ?: "playlist"}.m3u")
                     }
                 )
             }
